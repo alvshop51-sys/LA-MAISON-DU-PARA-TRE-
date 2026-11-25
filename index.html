@@ -7,7 +7,7 @@
 <title>ALV SHOP</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#101010;color:white;font-family:Arial;padding:16px}
+body{margin:0;background:#101010;color:white;font-family:Arial,sans-serif;padding:16px}
 .wrap{max-width:680px;margin:auto}
 h1,h2{color:#d6ad50;text-align:center}
 .card{background:#1d1d1d;border:1px solid #8c6a29;border-radius:14px;padding:16px;margin:14px 0}
@@ -41,7 +41,8 @@ button{background:#c99d3d;color:#111;font-weight:bold;border:0}
 <p class="small">Gestion de votre boutique</p>
 
 <div class="card">
-<h2>Nouvelle vente / Abonnement</h2>
+<h2>Nouvelle vente</h2>
+
 <input id="client" placeholder="Nom du client">
 <input id="phone" placeholder="Téléphone du client">
 
@@ -65,15 +66,17 @@ button{background:#c99d3d;color:#111;font-weight:bold;border:0}
 <input id="startDate" type="date">
 
 <select id="payment">
-<option>Airtel Money</option>
-<option>Moov Money</option>
-<option>Recharge</option>
-<option>PayPal</option>
+<option value="Airtel Money">Airtel Money</option>
+<option value="Moov Money">Moov Money</option>
+<option value="Recharge">Recharge</option>
+<option value="PayPal">PayPal</option>
 </select>
 
+<input id="reference" placeholder="Référence de transaction (facultatif)">
+
 <select id="status">
-<option value="Confirmé">Confirmé</option>
 <option value="En attente">En attente</option>
+<option value="Confirmé">Confirmé</option>
 </select>
 
 <button onclick="addSale()">Enregistrer la vente</button>
@@ -102,6 +105,11 @@ button{background:#c99d3d;color:#111;font-weight:bold;border:0}
 </div>
 
 <div class="card">
+<h2>Suivi des paiements</h2>
+<div id="paymentSummary"></div>
+</div>
+
+<div class="card">
 <h2>Suivi des abonnements</h2>
 <div id="expirySummary"></div>
 </div>
@@ -122,254 +130,269 @@ button{background:#c99d3d;color:#111;font-weight:bold;border:0}
 </div>
 
 <script>
-const ADMIN_PASSWORD = "ADENA12";
-const STORAGE_KEY = "alvshop_sales_demo";
-let sales = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+const ADMIN_PASSWORD="ADENA12";
+const STORAGE_KEY="alvshop_sales_demo";
+let sales=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
 
 function todayISO(){
-  const d=new Date();
-  const local=new Date(d.getTime()-d.getTimezoneOffset()*60000);
-  return local.toISOString().slice(0,10);
+ const d=new Date();
+ const local=new Date(d.getTime()-d.getTimezoneOffset()*60000);
+ return local.toISOString().slice(0,10);
 }
-
 document.getElementById("startDate").value=todayISO();
 
 function login(){
-  if(document.getElementById("password").value===ADMIN_PASSWORD){
-    document.getElementById("login").classList.add("hidden");
-    document.getElementById("dashboard").classList.remove("hidden");
-    document.getElementById("error").textContent="";
-    render();
-  }else{
-    document.getElementById("error").textContent="Mot de passe incorrect.";
-  }
+ if(document.getElementById("password").value===ADMIN_PASSWORD){
+  document.getElementById("login").classList.add("hidden");
+  document.getElementById("dashboard").classList.remove("hidden");
+  document.getElementById("error").textContent="";
+  render();
+ }else{
+  document.getElementById("error").textContent="Mot de passe incorrect.";
+ }
 }
 
 function logout(){
-  document.getElementById("dashboard").classList.add("hidden");
-  document.getElementById("login").classList.remove("hidden");
-  document.getElementById("password").value="";
+ document.getElementById("dashboard").classList.add("hidden");
+ document.getElementById("login").classList.remove("hidden");
+ document.getElementById("password").value="";
 }
 
 function updatePrice(){
-  const value=document.getElementById("product").value;
-  document.getElementById("price").textContent=value
-    ?"Montant : "+Number(value.split("|")[2]).toLocaleString("fr-FR")+" FCFA"
-    :"Montant : —";
+ const value=document.getElementById("product").value;
+ document.getElementById("price").textContent=value
+ ? "Montant : "+Number(value.split("|")[2]).toLocaleString("fr-FR")+" FCFA"
+ : "Montant : —";
 }
 
 function addMonths(dateString,months){
-  const d=new Date(dateString+"T12:00:00");
-  const day=d.getDate();
-  d.setDate(1);
-  d.setMonth(d.getMonth()+months);
-  const lastDay=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
-  d.setDate(Math.min(day,lastDay));
-  return d.toISOString().slice(0,10);
+ const d=new Date(dateString+"T12:00:00");
+ const day=d.getDate();
+ d.setDate(1);
+ d.setMonth(d.getMonth()+months);
+ const lastDay=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+ d.setDate(Math.min(day,lastDay));
+ return d.toISOString().slice(0,10);
 }
 
 function addSale(){
-  const client=document.getElementById("client").value.trim();
-  const phone=document.getElementById("phone").value.trim();
-  const product=document.getElementById("product").value;
-  const startDate=document.getElementById("startDate").value;
+ const client=document.getElementById("client").value.trim();
+ const phone=document.getElementById("phone").value.trim();
+ const product=document.getElementById("product").value;
+ const startDate=document.getElementById("startDate").value;
 
-  if(!client||!product||!startDate){
-    alert("Entre le nom du client, choisis un abonnement et une date de début.");
-    return;
-  }
+ if(!client||!product||!startDate){
+  alert("Entre le nom du client, choisis un abonnement et une date.");
+  return;
+ }
 
-  const parts=product.split("|");
-  const months=Number(parts[3]);
-  const expiryDate=addMonths(startDate,months);
+ const parts=product.split("|");
+ const expiryDate=addMonths(startDate,Number(parts[3]));
 
-  sales.unshift({
-    client:client,
-    phone:phone,
-    service:parts[0],
-    duration:parts[1],
-    amount:Number(parts[2]),
-    months:months,
-    startDate:startDate,
-    expiryDate:expiryDate,
-    payment:document.getElementById("payment").value,
-    status:document.getElementById("status").value,
-    date:new Date().toISOString()
-  });
+ sales.unshift({
+  client,phone,
+  service:parts[0],
+  duration:parts[1],
+  amount:Number(parts[2]),
+  months:Number(parts[3]),
+  startDate,
+  expiryDate,
+  payment:document.getElementById("payment").value,
+  reference:document.getElementById("reference").value.trim(),
+  status:document.getElementById("status").value,
+  date:new Date().toISOString()
+ });
 
-  save();
-  document.getElementById("client").value="";
-  document.getElementById("phone").value="";
-  document.getElementById("product").value="";
-  document.getElementById("startDate").value=todayISO();
-  updatePrice();
-  render();
-  alert("Vente enregistrée avec sa date d'expiration !");
+ save();
+ document.getElementById("client").value="";
+ document.getElementById("phone").value="";
+ document.getElementById("product").value="";
+ document.getElementById("reference").value="";
+ document.getElementById("startDate").value=todayISO();
+ updatePrice();
+ render();
+ alert("Vente enregistrée !");
 }
 
 function save(){
-  localStorage.setItem(STORAGE_KEY,JSON.stringify(sales));
+ localStorage.setItem(STORAGE_KEY,JSON.stringify(sales));
 }
 
 function getSaleDate(s){
-  if(!s.date)return null;
-  const d=new Date(s.date);
-  if(!isNaN(d.getTime()))return d;
-  const m=String(s.date).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if(m)return new Date(Number(m[3]),Number(m[2])-1,Number(m[1]));
-  return null;
+ if(!s.date)return null;
+ const d=new Date(s.date);
+ if(!isNaN(d.getTime()))return d;
+ const m=String(s.date).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+ if(m)return new Date(Number(m[3]),Number(m[2])-1,Number(m[1]));
+ return null;
 }
 
 function formatDate(value){
-  if(!value)return "Non renseignée";
-  const d=new Date(value+"T12:00:00");
-  return isNaN(d.getTime())?"Non renseignée":d.toLocaleDateString("fr-FR");
+ if(!value)return "Non renseignée";
+ const d=new Date(value+"T12:00:00");
+ return isNaN(d.getTime())?"Non renseignée":d.toLocaleDateString("fr-FR");
 }
 
 function expiryStatus(s){
-  if(s.status!=="Confirmé")return {label:"Paiement en attente",css:""};
-  if(!s.expiryDate)return {label:"Date à renseigner",css:""};
-  const today=new Date(todayISO()+"T00:00:00");
-  const expiry=new Date(s.expiryDate+"T00:00:00");
-  const diff=Math.ceil((expiry-today)/86400000);
-  if(diff<0)return {label:"Expiré",css:"expired"};
-  if(diff<=7)return {label:"Expire bientôt",css:"soon"};
-  return {label:"Actif",css:"active"};
+ if(s.status!=="Confirmé")return {label:"Paiement en attente",css:""};
+ if(!s.expiryDate)return {label:"Date à renseigner",css:""};
+ const today=new Date(todayISO()+"T00:00:00");
+ const expiry=new Date(s.expiryDate+"T00:00:00");
+ const diff=Math.ceil((expiry-today)/86400000);
+ if(diff<0)return {label:"Expiré",css:"expired"};
+ if(diff<=7)return {label:"Expire bientôt",css:"soon"};
+ return {label:"Actif",css:"active"};
 }
 
 function render(){
-  const now=new Date();
-  const confirmed=sales.filter(s=>s.status==="Confirmé");
-  const money=list=>list.reduce((sum,s)=>sum+Number(s.amount||0),0);
-  const format=n=>n.toLocaleString("fr-FR")+" FCFA";
+ const now=new Date();
+ const confirmed=sales.filter(s=>s.status==="Confirmé");
+ const money=list=>list.reduce((sum,s)=>sum+Number(s.amount||0),0);
+ const format=n=>n.toLocaleString("fr-FR")+" FCFA";
 
-  const total=money(confirmed);
-  const today=confirmed.filter(s=>{
-    const d=getSaleDate(s);
-    return d&&d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()&&d.getDate()===now.getDate();
-  });
-  const month=confirmed.filter(s=>{
-    const d=getSaleDate(s);
-    return d&&d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
-  });
+ const today=confirmed.filter(s=>{
+  const d=getSaleDate(s);
+  return d&&d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()&&d.getDate()===now.getDate();
+ });
+ const month=confirmed.filter(s=>{
+  const d=getSaleDate(s);
+  return d&&d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
+ });
 
-  document.getElementById("total").textContent=format(total);
-  document.getElementById("todayTotal").textContent=format(money(today));
-  document.getElementById("todayCount").textContent=today.length+" vente(s) confirmée(s)";
-  document.getElementById("monthTotal").textContent=format(money(month));
-  document.getElementById("monthCount").textContent=month.length+" vente(s) confirmée(s)";
-  document.getElementById("salesCount").textContent=sales.length;
+ document.getElementById("total").textContent=format(money(confirmed));
+ document.getElementById("todayTotal").textContent=format(money(today));
+ document.getElementById("todayCount").textContent=today.length+" vente(s) confirmée(s)";
+ document.getElementById("monthTotal").textContent=format(money(month));
+ document.getElementById("monthCount").textContent=month.length+" vente(s) confirmée(s)";
+ document.getElementById("salesCount").textContent=sales.length;
 
-  renderExpiry();
-  renderClients();
-  renderHistory();
+ renderPaymentSummary();
+ renderExpiry();
+ renderClients();
+ renderHistory();
+}
+
+function renderPaymentSummary(){
+ const methods=["Airtel Money","Moov Money","Recharge","PayPal"];
+ const container=document.getElementById("paymentSummary");
+ container.innerHTML="";
+ methods.forEach(method=>{
+  const list=sales.filter(s=>s.payment===method);
+  const confirmed=list.filter(s=>s.status==="Confirmé");
+  const waiting=list.filter(s=>s.status==="En attente");
+  const div=document.createElement("p");
+  div.className="small";
+  div.textContent=method+" : "+confirmed.length+" confirmé(s), "+
+   waiting.length+" en attente — "+Number(confirmed.reduce((a,s)=>a+Number(s.amount||0),0)).toLocaleString("fr-FR")+" FCFA reçus";
+  container.appendChild(div);
+ });
 }
 
 function renderExpiry(){
-  const confirmed=sales.filter(s=>s.status==="Confirmé"&&s.expiryDate);
-  let active=0,soon=0,expired=0;
-  confirmed.forEach(s=>{
-    const status=expiryStatus(s);
-    if(status.css==="active")active++;
-    if(status.css==="soon")soon++;
-    if(status.css==="expired")expired++;
-  });
-
-  document.getElementById("expirySummary").innerHTML=
-    '<p class="small">Abonnements suivis</p>'+
-    '<p class="stat">'+active+' actifs</p>'+
-    '<p class="stat">'+soon+' expirent bientôt</p>'+
-    '<p class="stat">'+expired+' expirés</p>';
+ const confirmed=sales.filter(s=>s.status==="Confirmé"&&s.expiryDate);
+ let active=0,soon=0,expired=0;
+ confirmed.forEach(s=>{
+  const status=expiryStatus(s);
+  if(status.css==="active")active++;
+  if(status.css==="soon")soon++;
+  if(status.css==="expired")expired++;
+ });
+ document.getElementById("expirySummary").innerHTML=
+  '<p class="stat">'+active+' actifs</p>'+
+  '<p class="stat">'+soon+' expirent bientôt</p>'+
+  '<p class="stat">'+expired+' expirés</p>';
 }
 
 function renderClients(){
-  const query=(document.getElementById("clientSearch").value||"").toLowerCase();
-  const container=document.getElementById("clients");
-  container.innerHTML="";
+ const query=(document.getElementById("clientSearch").value||"").toLowerCase();
+ const container=document.getElementById("clients");
+ container.innerHTML="";
+ const grouped={};
 
-  const grouped={};
-  sales.forEach(s=>{
-    const key=(s.phone||"").trim()||s.client.toLowerCase();
-    if(!grouped[key]||new Date(s.date||0)>new Date(grouped[key].date||0)){
-      grouped[key]=s;
-    }
-  });
-
-  const list=Object.values(grouped).filter(s=>
-    (s.client||"").toLowerCase().includes(query)||
-    (s.phone||"").toLowerCase().includes(query)
-  );
-
-  if(!list.length){
-    container.textContent="Aucun client trouvé.";
-    return;
+ sales.forEach(s=>{
+  const key=(s.phone||"").trim()||s.client.toLowerCase();
+  if(!grouped[key]||new Date(s.date||0)>new Date(grouped[key].date||0)){
+   grouped[key]=s;
   }
+ });
 
-  list.forEach(s=>{
-    const div=document.createElement("div");
-    div.className="client-item";
-    const name=document.createElement("strong");
-    name.textContent=s.client;
-    const phone=document.createElement("p");
-    phone.className="small";
-    phone.textContent="Téléphone : "+(s.phone||"Non renseigné");
-    const subscription=document.createElement("p");
-    subscription.textContent=(s.service||"Abonnement")+" — "+(s.duration||"Durée inconnue");
-    const expiry=document.createElement("p");
-    expiry.className="small";
-    expiry.textContent="Expiration : "+formatDate(s.expiryDate);
-    const status=expiryStatus(s);
-    const tag=document.createElement("span");
-    tag.className="tag "+status.css;
-    tag.textContent=status.label;
-    div.append(name,phone,subscription,expiry,tag);
-    container.appendChild(div);
-  });
+ const list=Object.values(grouped).filter(s=>
+  (s.client||"").toLowerCase().includes(query)||
+  (s.phone||"").toLowerCase().includes(query)
+ );
+
+ if(!list.length){
+  container.textContent="Aucun client trouvé.";
+  return;
+ }
+
+ list.forEach(s=>{
+  const div=document.createElement("div");
+  div.className="client-item";
+  const name=document.createElement("strong");
+  name.textContent=s.client;
+  const phone=document.createElement("p");
+  phone.className="small";
+  phone.textContent="Téléphone : "+(s.phone||"Non renseigné");
+  const sub=document.createElement("p");
+  sub.textContent=(s.service||"Abonnement")+" — "+(s.duration||"");
+  const expiry=document.createElement("p");
+  expiry.className="small";
+  expiry.textContent="Expiration : "+formatDate(s.expiryDate);
+  const tag=document.createElement("span");
+  const status=expiryStatus(s);
+  tag.className="tag "+status.css;
+  tag.textContent=status.label;
+  div.append(name,phone,sub,expiry,tag);
+  container.appendChild(div);
+ });
 }
 
 function renderHistory(){
-  const history=document.getElementById("history");
-  history.innerHTML="";
-  if(!sales.length){
-    history.textContent="Aucune vente enregistrée.";
-    return;
-  }
+ const history=document.getElementById("history");
+ history.innerHTML="";
+ if(!sales.length){
+  history.textContent="Aucune vente enregistrée.";
+  return;
+ }
 
-  sales.forEach((s,i)=>{
-    const div=document.createElement("div");
-    div.className="sale";
+ sales.forEach((s,i)=>{
+  const div=document.createElement("div");
+  div.className="sale";
 
-    const details=document.createElement("div");
-    details.textContent=s.client+" — "+(s.service||"")+
-      " ("+(s.duration||"")+")";
+  const details=document.createElement("div");
+  details.textContent=s.client+" — "+(s.service||"")+" ("+(s.duration||"")+")";
 
-    const amount=document.createElement("strong");
-    amount.textContent=Number(s.amount||0).toLocaleString("fr-FR")+" FCFA";
+  const amount=document.createElement("strong");
+  amount.textContent=Number(s.amount||0).toLocaleString("fr-FR")+" FCFA";
 
-    const info=document.createElement("p");
-    info.className="small";
-    const d=getSaleDate(s);
-    info.textContent=(d?d.toLocaleString("fr-FR"):"Date inconnue")+
-      " | "+(s.payment||"")+
-      " | "+(s.status||"");
+  const info=document.createElement("p");
+  info.className="small";
+  const d=getSaleDate(s);
+  info.textContent=(d?d.toLocaleString("fr-FR"):"Date inconnue")+
+   " | "+(s.payment||"")+" | "+(s.status||"");
 
-    const expiry=document.createElement("p");
-    expiry.className="small";
-    expiry.textContent="Expiration : "+formatDate(s.expiryDate);
+  const reference=document.createElement("p");
+  reference.className="small";
+  reference.textContent="Référence : "+(s.reference||"Non renseignée");
 
-    const del=document.createElement("button");
-    del.textContent="Supprimer";
-    del.onclick=()=>{
-      if(confirm("Supprimer cette vente ?")){
-        sales.splice(i,1);
-        save();
-        render();
-      }
-    };
+  const expiry=document.createElement("p");
+  expiry.className="small";
+  expiry.textContent="Expiration : "+formatDate(s.expiryDate);
 
-    div.append(details,amount,info,expiry,del);
-    history.appendChild(div);
-  });
+  const del=document.createElement("button");
+  del.textContent="Supprimer";
+  del.onclick=()=>{
+   if(confirm("Supprimer cette vente ?")){
+    sales.splice(i,1);
+    save();
+    render();
+   }
+  };
+
+  div.append(details,amount,info,reference,expiry,del);
+  history.appendChild(div);
+ });
 }
 </script>
 </body>
