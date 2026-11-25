@@ -7,17 +7,17 @@
 <title>ALV SHOP</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#101010;color:#fff;font-family:Arial,sans-serif;padding:20px}
+body{margin:0;background:#101010;color:white;font-family:Arial;padding:18px}
 .wrap{max-width:650px;margin:auto}
 h1,h2{color:#d6ad50;text-align:center}
-.card{background:#1d1d1d;border:1px solid #8c6a29;border-radius:14px;padding:18px;margin:15px 0}
+.card{background:#1d1d1d;border:1px solid #8c6a29;border-radius:14px;padding:17px;margin:14px 0}
 input,select,button{width:100%;padding:13px;margin:7px 0;border-radius:8px;border:1px solid #777;font-size:16px}
 input,select{background:#292929;color:white}
 button{background:#c99d3d;color:#111;font-weight:bold;border:0}
-button:active{opacity:.8}
 .small{color:#bbb;font-size:13px;text-align:center}
 .hidden{display:none}
-.total{font-size:28px;text-align:center;color:#e6bd60;font-weight:bold}
+.total{font-size:27px;text-align:center;color:#e6bd60;font-weight:bold}
+.stat{font-size:22px;text-align:center;color:#e6bd60;font-weight:bold;margin:8px}
 .sale{border-bottom:1px solid #555;padding:12px 0}
 .sale button{width:auto;padding:8px 12px}
 </style>
@@ -74,8 +74,26 @@ button:active{opacity:.8}
 </div>
 
 <div class="card">
-<h2>Total des recettes confirmées</h2>
+<h2>Recettes totales confirmées</h2>
 <div id="total" class="total">0 FCFA</div>
+</div>
+
+<div class="card">
+<h2>Bilan du jour</h2>
+<div id="todayTotal" class="stat">0 FCFA</div>
+<p id="todayCount" class="small">0 vente confirmée</p>
+</div>
+
+<div class="card">
+<h2>Bilan du mois</h2>
+<div id="monthTotal" class="stat">0 FCFA</div>
+<p id="monthCount" class="small">0 vente confirmée</p>
+</div>
+
+<div class="card">
+<h2>Nombre total de ventes</h2>
+<div id="salesCount" class="stat">0</div>
+<p class="small">Toutes les ventes, y compris celles en attente</p>
 </div>
 
 <div class="card">
@@ -119,10 +137,12 @@ function addSale(){
   const client=document.getElementById("client").value.trim();
   const phone=document.getElementById("phone").value.trim();
   const product=document.getElementById("product").value;
+
   if(!client || !product){
     alert("Entre le nom du client et choisis un abonnement.");
     return;
   }
+
   const parts=product.split("|");
   sales.unshift({
     client,phone,
@@ -131,8 +151,9 @@ function addSale(){
     amount:Number(parts[2]),
     payment:document.getElementById("payment").value,
     status:document.getElementById("status").value,
-    date:new Date().toLocaleString("fr-FR")
+    date:new Date().toISOString()
   });
+
   save();
   document.getElementById("client").value="";
   document.getElementById("phone").value="";
@@ -146,27 +167,68 @@ function save(){
   localStorage.setItem(STORAGE_KEY,JSON.stringify(sales));
 }
 
+function getSaleDate(s){
+  if(!s.date) return null;
+  let d=new Date(s.date);
+  if(!isNaN(d.getTime())) return d;
+
+  // Reconnaît les anciennes dates enregistrées au format français
+  const m=String(s.date).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(m) return new Date(Number(m[3]),Number(m[2])-1,Number(m[1]));
+  return null;
+}
+
 function render(){
-  const total=sales.filter(s=>s.status==="Confirmé")
-    .reduce((sum,s)=>sum+s.amount,0);
-  document.getElementById("total").textContent=total.toLocaleString("fr-FR")+" FCFA";
+  const now=new Date();
+  const todayKey=now.getFullYear()+"-"+now.getMonth()+"-"+now.getDate();
+  const monthKey=now.getFullYear()+"-"+now.getMonth();
+
+  const confirmed=sales.filter(s=>s.status==="Confirmé");
+  const total=confirmed.reduce((sum,s)=>sum+Number(s.amount||0),0);
+
+  const today=confirmed.filter(s=>{
+    const d=getSaleDate(s);
+    return d && d.getFullYear()+"-"+d.getMonth()+"-"+d.getDate()===todayKey;
+  });
+
+  const month=confirmed.filter(s=>{
+    const d=getSaleDate(s);
+    return d && d.getFullYear()+"-"+d.getMonth()===monthKey;
+  });
+
+  const money=list=>list.reduce((sum,s)=>sum+Number(s.amount||0),0);
+  const format=n=>n.toLocaleString("fr-FR")+" FCFA";
+
+  document.getElementById("total").textContent=format(total);
+  document.getElementById("todayTotal").textContent=format(money(today));
+  document.getElementById("todayCount").textContent=today.length+" vente(s) confirmée(s)";
+  document.getElementById("monthTotal").textContent=format(money(month));
+  document.getElementById("monthCount").textContent=month.length+" vente(s) confirmée(s)";
+  document.getElementById("salesCount").textContent=sales.length;
 
   const history=document.getElementById("history");
   if(!sales.length){
     history.textContent="Aucune vente enregistrée.";
     return;
   }
+
   history.innerHTML="";
   sales.forEach((s,i)=>{
     const div=document.createElement("div");
     div.className="sale";
+
     const details=document.createElement("div");
     details.textContent=s.client+" — "+s.service+" ("+s.duration+")";
+
     const amount=document.createElement("strong");
-    amount.textContent=s.amount.toLocaleString("fr-FR")+" FCFA";
+    amount.textContent=format(Number(s.amount||0));
+
     const info=document.createElement("p");
     info.className="small";
-    info.textContent=s.date+" | "+s.payment+" | "+s.status;
+    const d=getSaleDate(s);
+    const dateText=d ? d.toLocaleString("fr-FR") : "Date inconnue";
+    info.textContent=dateText+" | "+s.payment+" | "+s.status;
+
     const del=document.createElement("button");
     del.textContent="Supprimer";
     del.onclick=()=>{
@@ -176,6 +238,7 @@ function render(){
         render();
       }
     };
+
     div.append(details,amount,info,del);
     history.appendChild(div);
   });
