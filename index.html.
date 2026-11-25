@@ -1,0 +1,187 @@
+
+
+<!DOCTYPE html>
+
+<html lang="fr">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>ALV SHOP</title>
+
+<style>
+
+*{box-sizing:border-box}
+
+body{margin:0;background:#090d15;color:white;font-family:Arial,sans-serif;padding:20px}
+
+header{display:flex;align-items:center;gap:12px;margin:15px 0 30px}
+
+.logo{background:#e11d2e;padding:15px;border-radius:14px;font-weight:bold;font-size:20px}
+
+h1{font-size:23px;margin:0}
+
+small{color:#9ca3af}
+
+.card{background:#171f2d;padding:20px;border-radius:16px;margin-bottom:17px}
+
+.total{font-size:30px;font-weight:bold;color:#35d399;margin-top:10px}
+
+label{display:block;margin:15px 0 7px;color:#cbd5e1}
+
+input,select{width:100%;padding:14px;border-radius:9px;border:1px solid #374151;background:#0c1421;color:white;font-size:16px}
+
+button{width:100%;padding:15px;border:0;border-radius:10px;background:#e11d2e;color:white;font-size:16px;font-weight:bold;margin-top:18px}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+
+td,th{padding:12px 5px;border-bottom:1px solid #374151;text-align:left}
+
+footer{text-align:center;color:#94a3b8;margin-top:30px;font-size:12px}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<div class="logo">ALV</div>
+
+<div><h1>ALV SHOP</h1><small>ESPACE DE GESTION</small></div>
+
+</header>
+
+<div class="card">
+
+<small>TOTAL ENCAISSÉ (SAISIES DE DÉMONSTRATION)</small>
+
+<div class="total" id="total">0 FCFA</div>
+
+</div>
+
+<div class="card">
+
+<h3>Nouvelle transaction</h3>
+
+<label>Nom du client</label>
+
+<input id="client" placeholder="Nom du client">
+
+<label>Numéro de téléphone</label>
+
+<input id="phone" placeholder="Numéro du client">
+
+<label>Abonnement</label>
+
+<select id="offre">
+
+<option>Netflix – 1 mois – 2600</option>
+
+<option>Netflix – 2 mois – 4500</option>
+
+<option>Netflix – 3 mois – 6500</option>
+
+<option>Netflix – 6 mois – 12000</option>
+
+<option>Netflix – 1 an – 25000</option>
+
+<option>Prime – 1 mois – 2000</option>
+
+<option>Prime – 2 mois – 3500</option>
+
+<option>Prime – 3 mois – 5000</option>
+
+<option>Prime – 6 mois – 9000</option>
+
+<option>Prime – 1 an – 20000</option>
+
+</select>
+
+<label>Mode de paiement</label>
+
+<select id="mode">
+
+<option>Airtel Money</option>
+
+<option>Moov Money</option>
+
+<option>PayPal</option>
+
+</select>
+
+<button onclick="ajouter()">Enregistrer une saisie test</button>
+
+<small>Prototype uniquement : aucun paiement réel n'est déclenché.</small>
+
+</div>
+
+<div class="card">
+
+<h3>Historique des transactions</h3>
+
+<div style="overflow-x:auto">
+
+<table>
+
+<thead><tr><th>Client</th><th>Offre</th><th>Montant</th></tr></thead>
+
+<tbody id="historique">
+
+<tr><td colspan="3">Aucune transaction</td></tr>
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<footer>ALV SHOP © 2026 – Gestion des abonnements</footer>
+
+<script>
+
+let transactions=[];
+
+function ajouter(){
+
+let client=document.getElementById('client').value.trim();
+
+let phone=document.getElementById('phone').value.trim();
+
+let offre=document.getElementById('offre').value;
+
+let mode=document.getElementById('mode').value;
+
+if(!client||!phone){alert("Remplis le nom et le numéro.");return;}
+
+let montant=Number(offre.split('–').pop().trim());
+
+transactions.push({client,offre,mode,montant});
+
+document.getElementById('historique').innerHTML=transactions.map(t=>
+
+`<tr><td>${t.client}</td><td>${t.offre.split('–').slice(0,2).join(' ')}</td><td>${t.montant.toLocaleString('fr-FR')}</td></tr>`
+
+).join('');
+
+let total=transactions.reduce((s,t)=>s+t.montant,0);
+
+document.getElementById('total').textContent=total.toLocaleString('fr-FR')+' FCFA';
+
+document.getElementById('client').value='';
+
+document.getElementById('phone').value='';
+
+}
+
+</script>
+
+</body>
+
+</html>
