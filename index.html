@@ -7,19 +7,22 @@
 <title>ALV SHOP</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#101010;color:white;font-family:Arial;padding:18px}
-.wrap{max-width:650px;margin:auto}
+body{margin:0;background:#101010;color:white;font-family:Arial;padding:16px}
+.wrap{max-width:680px;margin:auto}
 h1,h2{color:#d6ad50;text-align:center}
-.card{background:#1d1d1d;border:1px solid #8c6a29;border-radius:14px;padding:17px;margin:14px 0}
+.card{background:#1d1d1d;border:1px solid #8c6a29;border-radius:14px;padding:16px;margin:14px 0}
 input,select,button{width:100%;padding:13px;margin:7px 0;border-radius:8px;border:1px solid #777;font-size:16px}
 input,select{background:#292929;color:white}
 button{background:#c99d3d;color:#111;font-weight:bold;border:0}
 .small{color:#bbb;font-size:13px;text-align:center}
 .hidden{display:none}
-.total{font-size:27px;text-align:center;color:#e6bd60;font-weight:bold}
-.stat{font-size:22px;text-align:center;color:#e6bd60;font-weight:bold;margin:8px}
-.sale{border-bottom:1px solid #555;padding:12px 0}
+.total,.stat{font-size:25px;text-align:center;color:#e6bd60;font-weight:bold}
+.sale,.client-item{border-bottom:1px solid #555;padding:12px 0}
 .sale button{width:auto;padding:8px 12px}
+.tag{display:inline-block;padding:5px 9px;border-radius:6px;font-size:12px;background:#555;margin:5px 0}
+.active{background:#185b35}
+.soon{background:#80601c}
+.expired{background:#742b2b}
 </style>
 </head>
 <body>
@@ -35,28 +38,31 @@ button{background:#c99d3d;color:#111;font-weight:bold;border:0}
 
 <main id="dashboard" class="hidden">
 <h1>ALV SHOP</h1>
-<p class="small">Tableau de bord administrateur</p>
+<p class="small">Gestion de votre boutique</p>
 
 <div class="card">
-<h2>Nouvelle vente</h2>
+<h2>Nouvelle vente / Abonnement</h2>
 <input id="client" placeholder="Nom du client">
 <input id="phone" placeholder="Téléphone du client">
 
 <select id="product" onchange="updatePrice()">
 <option value="">Choisir un abonnement</option>
-<option value="Netflix|1 mois|2600">Netflix – 1 mois : 2 600 F</option>
-<option value="Netflix|2 mois|4500">Netflix – 2 mois : 4 500 F</option>
-<option value="Netflix|3 mois|6500">Netflix – 3 mois : 6 500 F</option>
-<option value="Netflix|6 mois|12000">Netflix – 6 mois : 12 000 F</option>
-<option value="Netflix|1 an|25000">Netflix – 1 an : 25 000 F</option>
-<option value="Prime|1 mois|2000">Prime – 1 mois : 2 000 F</option>
-<option value="Prime|2 mois|3500">Prime – 2 mois : 3 500 F</option>
-<option value="Prime|3 mois|5000">Prime – 3 mois : 5 000 F</option>
-<option value="Prime|6 mois|9000">Prime – 6 mois : 9 000 F</option>
-<option value="Prime|1 an|20000">Prime – 1 an : 20 000 F</option>
+<option value="Netflix|1 mois|2600|1">Netflix – 1 mois : 2 600 F</option>
+<option value="Netflix|2 mois|4500|2">Netflix – 2 mois : 4 500 F</option>
+<option value="Netflix|3 mois|6500|3">Netflix – 3 mois : 6 500 F</option>
+<option value="Netflix|6 mois|12000|6">Netflix – 6 mois : 12 000 F</option>
+<option value="Netflix|1 an|25000|12">Netflix – 1 an : 25 000 F</option>
+<option value="Prime|1 mois|2000|1">Prime – 1 mois : 2 000 F</option>
+<option value="Prime|2 mois|3500|2">Prime – 2 mois : 3 500 F</option>
+<option value="Prime|3 mois|5000|3">Prime – 3 mois : 5 000 F</option>
+<option value="Prime|6 mois|9000|6">Prime – 6 mois : 9 000 F</option>
+<option value="Prime|1 an|20000|12">Prime – 1 an : 20 000 F</option>
 </select>
 
 <p id="price" class="small">Montant : —</p>
+
+<label class="small">Date de début de l'abonnement</label>
+<input id="startDate" type="date">
 
 <select id="payment">
 <option>Airtel Money</option>
@@ -93,7 +99,17 @@ button{background:#c99d3d;color:#111;font-weight:bold;border:0}
 <div class="card">
 <h2>Nombre total de ventes</h2>
 <div id="salesCount" class="stat">0</div>
-<p class="small">Toutes les ventes, y compris celles en attente</p>
+</div>
+
+<div class="card">
+<h2>Suivi des abonnements</h2>
+<div id="expirySummary"></div>
+</div>
+
+<div class="card">
+<h2>Liste des clients</h2>
+<input id="clientSearch" placeholder="Rechercher un client..." oninput="renderClients()">
+<div id="clients">Aucun client enregistré.</div>
 </div>
 
 <div class="card">
@@ -110,8 +126,16 @@ const ADMIN_PASSWORD = "ADENA12";
 const STORAGE_KEY = "alvshop_sales_demo";
 let sales = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 
+function todayISO(){
+  const d=new Date();
+  const local=new Date(d.getTime()-d.getTimezoneOffset()*60000);
+  return local.toISOString().slice(0,10);
+}
+
+document.getElementById("startDate").value=todayISO();
+
 function login(){
-  if(document.getElementById("password").value === ADMIN_PASSWORD){
+  if(document.getElementById("password").value===ADMIN_PASSWORD){
     document.getElementById("login").classList.add("hidden");
     document.getElementById("dashboard").classList.remove("hidden");
     document.getElementById("error").textContent="";
@@ -129,26 +153,45 @@ function logout(){
 
 function updatePrice(){
   const value=document.getElementById("product").value;
-  document.getElementById("price").textContent =
-    value ? "Montant : "+Number(value.split("|")[2]).toLocaleString("fr-FR")+" FCFA" : "Montant : —";
+  document.getElementById("price").textContent=value
+    ?"Montant : "+Number(value.split("|")[2]).toLocaleString("fr-FR")+" FCFA"
+    :"Montant : —";
+}
+
+function addMonths(dateString,months){
+  const d=new Date(dateString+"T12:00:00");
+  const day=d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth()+months);
+  const lastDay=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+  d.setDate(Math.min(day,lastDay));
+  return d.toISOString().slice(0,10);
 }
 
 function addSale(){
   const client=document.getElementById("client").value.trim();
   const phone=document.getElementById("phone").value.trim();
   const product=document.getElementById("product").value;
+  const startDate=document.getElementById("startDate").value;
 
-  if(!client || !product){
-    alert("Entre le nom du client et choisis un abonnement.");
+  if(!client||!product||!startDate){
+    alert("Entre le nom du client, choisis un abonnement et une date de début.");
     return;
   }
 
   const parts=product.split("|");
+  const months=Number(parts[3]);
+  const expiryDate=addMonths(startDate,months);
+
   sales.unshift({
-    client,phone,
+    client:client,
+    phone:phone,
     service:parts[0],
     duration:parts[1],
     amount:Number(parts[2]),
+    months:months,
+    startDate:startDate,
+    expiryDate:expiryDate,
     payment:document.getElementById("payment").value,
     status:document.getElementById("status").value,
     date:new Date().toISOString()
@@ -158,9 +201,10 @@ function addSale(){
   document.getElementById("client").value="";
   document.getElementById("phone").value="";
   document.getElementById("product").value="";
+  document.getElementById("startDate").value=todayISO();
   updatePrice();
   render();
-  alert("Vente enregistrée !");
+  alert("Vente enregistrée avec sa date d'expiration !");
 }
 
 function save(){
@@ -168,36 +212,46 @@ function save(){
 }
 
 function getSaleDate(s){
-  if(!s.date) return null;
-  let d=new Date(s.date);
-  if(!isNaN(d.getTime())) return d;
-
-  // Reconnaît les anciennes dates enregistrées au format français
+  if(!s.date)return null;
+  const d=new Date(s.date);
+  if(!isNaN(d.getTime()))return d;
   const m=String(s.date).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if(m) return new Date(Number(m[3]),Number(m[2])-1,Number(m[1]));
+  if(m)return new Date(Number(m[3]),Number(m[2])-1,Number(m[1]));
   return null;
+}
+
+function formatDate(value){
+  if(!value)return "Non renseignée";
+  const d=new Date(value+"T12:00:00");
+  return isNaN(d.getTime())?"Non renseignée":d.toLocaleDateString("fr-FR");
+}
+
+function expiryStatus(s){
+  if(s.status!=="Confirmé")return {label:"Paiement en attente",css:""};
+  if(!s.expiryDate)return {label:"Date à renseigner",css:""};
+  const today=new Date(todayISO()+"T00:00:00");
+  const expiry=new Date(s.expiryDate+"T00:00:00");
+  const diff=Math.ceil((expiry-today)/86400000);
+  if(diff<0)return {label:"Expiré",css:"expired"};
+  if(diff<=7)return {label:"Expire bientôt",css:"soon"};
+  return {label:"Actif",css:"active"};
 }
 
 function render(){
   const now=new Date();
-  const todayKey=now.getFullYear()+"-"+now.getMonth()+"-"+now.getDate();
-  const monthKey=now.getFullYear()+"-"+now.getMonth();
-
   const confirmed=sales.filter(s=>s.status==="Confirmé");
-  const total=confirmed.reduce((sum,s)=>sum+Number(s.amount||0),0);
-
-  const today=confirmed.filter(s=>{
-    const d=getSaleDate(s);
-    return d && d.getFullYear()+"-"+d.getMonth()+"-"+d.getDate()===todayKey;
-  });
-
-  const month=confirmed.filter(s=>{
-    const d=getSaleDate(s);
-    return d && d.getFullYear()+"-"+d.getMonth()===monthKey;
-  });
-
   const money=list=>list.reduce((sum,s)=>sum+Number(s.amount||0),0);
   const format=n=>n.toLocaleString("fr-FR")+" FCFA";
+
+  const total=money(confirmed);
+  const today=confirmed.filter(s=>{
+    const d=getSaleDate(s);
+    return d&&d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()&&d.getDate()===now.getDate();
+  });
+  const month=confirmed.filter(s=>{
+    const d=getSaleDate(s);
+    return d&&d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
+  });
 
   document.getElementById("total").textContent=format(total);
   document.getElementById("todayTotal").textContent=format(money(today));
@@ -206,28 +260,102 @@ function render(){
   document.getElementById("monthCount").textContent=month.length+" vente(s) confirmée(s)";
   document.getElementById("salesCount").textContent=sales.length;
 
+  renderExpiry();
+  renderClients();
+  renderHistory();
+}
+
+function renderExpiry(){
+  const confirmed=sales.filter(s=>s.status==="Confirmé"&&s.expiryDate);
+  let active=0,soon=0,expired=0;
+  confirmed.forEach(s=>{
+    const status=expiryStatus(s);
+    if(status.css==="active")active++;
+    if(status.css==="soon")soon++;
+    if(status.css==="expired")expired++;
+  });
+
+  document.getElementById("expirySummary").innerHTML=
+    '<p class="small">Abonnements suivis</p>'+
+    '<p class="stat">'+active+' actifs</p>'+
+    '<p class="stat">'+soon+' expirent bientôt</p>'+
+    '<p class="stat">'+expired+' expirés</p>';
+}
+
+function renderClients(){
+  const query=(document.getElementById("clientSearch").value||"").toLowerCase();
+  const container=document.getElementById("clients");
+  container.innerHTML="";
+
+  const grouped={};
+  sales.forEach(s=>{
+    const key=(s.phone||"").trim()||s.client.toLowerCase();
+    if(!grouped[key]||new Date(s.date||0)>new Date(grouped[key].date||0)){
+      grouped[key]=s;
+    }
+  });
+
+  const list=Object.values(grouped).filter(s=>
+    (s.client||"").toLowerCase().includes(query)||
+    (s.phone||"").toLowerCase().includes(query)
+  );
+
+  if(!list.length){
+    container.textContent="Aucun client trouvé.";
+    return;
+  }
+
+  list.forEach(s=>{
+    const div=document.createElement("div");
+    div.className="client-item";
+    const name=document.createElement("strong");
+    name.textContent=s.client;
+    const phone=document.createElement("p");
+    phone.className="small";
+    phone.textContent="Téléphone : "+(s.phone||"Non renseigné");
+    const subscription=document.createElement("p");
+    subscription.textContent=(s.service||"Abonnement")+" — "+(s.duration||"Durée inconnue");
+    const expiry=document.createElement("p");
+    expiry.className="small";
+    expiry.textContent="Expiration : "+formatDate(s.expiryDate);
+    const status=expiryStatus(s);
+    const tag=document.createElement("span");
+    tag.className="tag "+status.css;
+    tag.textContent=status.label;
+    div.append(name,phone,subscription,expiry,tag);
+    container.appendChild(div);
+  });
+}
+
+function renderHistory(){
   const history=document.getElementById("history");
+  history.innerHTML="";
   if(!sales.length){
     history.textContent="Aucune vente enregistrée.";
     return;
   }
 
-  history.innerHTML="";
   sales.forEach((s,i)=>{
     const div=document.createElement("div");
     div.className="sale";
 
     const details=document.createElement("div");
-    details.textContent=s.client+" — "+s.service+" ("+s.duration+")";
+    details.textContent=s.client+" — "+(s.service||"")+
+      " ("+(s.duration||"")+")";
 
     const amount=document.createElement("strong");
-    amount.textContent=format(Number(s.amount||0));
+    amount.textContent=Number(s.amount||0).toLocaleString("fr-FR")+" FCFA";
 
     const info=document.createElement("p");
     info.className="small";
     const d=getSaleDate(s);
-    const dateText=d ? d.toLocaleString("fr-FR") : "Date inconnue";
-    info.textContent=dateText+" | "+s.payment+" | "+s.status;
+    info.textContent=(d?d.toLocaleString("fr-FR"):"Date inconnue")+
+      " | "+(s.payment||"")+
+      " | "+(s.status||"");
+
+    const expiry=document.createElement("p");
+    expiry.className="small";
+    expiry.textContent="Expiration : "+formatDate(s.expiryDate);
 
     const del=document.createElement("button");
     del.textContent="Supprimer";
@@ -239,7 +367,7 @@ function render(){
       }
     };
 
-    div.append(details,amount,info,del);
+    div.append(details,amount,info,expiry,del);
     history.appendChild(div);
   });
 }
