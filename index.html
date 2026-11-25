@@ -4,192 +4,182 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ALV SHOP - Administration</title>
+<title>ALV SHOP</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#090b10;color:#fff;font-family:Arial,sans-serif;padding:20px}
-header{display:flex;align-items:center;gap:13px;margin:10px 0 28px}
-.logo{background:linear-gradient(135deg,#d9b45b,#8c6827);color:#111;padding:15px;border-radius:13px;font-size:23px;font-weight:900}
-h1{font-size:24px;margin:0}
-.sub{color:#aaa;font-size:11px;letter-spacing:2px;margin-top:5px}
-.gold{color:#e4bd68}
-.card{background:#151922;border:1px solid #303541;border-radius:16px;padding:19px;margin-bottom:17px}
-.card h2{font-size:17px;margin:0 0 18px}
-.total{font-size:32px;font-weight:bold;color:#e4bd68;margin-top:10px}
-.stats{color:#aaa;font-size:12px}
-label{display:block;color:#c7c7c7;font-size:13px;margin:14px 0 7px}
-input,select{width:100%;padding:14px;background:#0b1019;border:1px solid #414957;color:white;border-radius:9px;font-size:15px}
-button{padding:14px;border:0;border-radius:9px;font-weight:bold;font-size:14px;cursor:pointer}
-.primary{background:#d6b15e;color:#111;width:100%;margin-top:20px}
-.secondary{background:#303746;color:white}
-.delete{background:#42252a;color:#ffb6b6;padding:8px;font-size:12px}
-table{width:100%;border-collapse:collapse;font-size:12px;min-width:430px}
-th,td{padding:12px 8px;border-bottom:1px solid #303541;text-align:left}
-th{color:#e4bd68}
-.scroll{overflow-x:auto}
-.note{color:#999;font-size:12px;line-height:1.6}
-footer{text-align:center;color:#777;font-size:11px;margin:25px 0}
+body{margin:0;background:#101010;color:#fff;font-family:Arial,sans-serif;padding:20px}
+.wrap{max-width:650px;margin:auto}
+h1,h2{color:#d6ad50;text-align:center}
+.card{background:#1d1d1d;border:1px solid #8c6a29;border-radius:14px;padding:18px;margin:15px 0}
+input,select,button{width:100%;padding:13px;margin:7px 0;border-radius:8px;border:1px solid #777;font-size:16px}
+input,select{background:#292929;color:white}
+button{background:#c99d3d;color:#111;font-weight:bold;border:0}
+button:active{opacity:.8}
+.small{color:#bbb;font-size:13px;text-align:center}
+.hidden{display:none}
+.total{font-size:28px;text-align:center;color:#e6bd60;font-weight:bold}
+.sale{border-bottom:1px solid #555;padding:12px 0}
+.sale button{width:auto;padding:8px 12px}
 </style>
 </head>
 <body>
+<div class="wrap">
 
-<header>
-<div class="logo">ALV</div>
-<div>
-<h1>ALV <span class="gold">SHOP</span></h1>
-<div class="sub">ESPACE ADMINISTRATION</div>
-</div>
-</header>
+<section id="login" class="card">
+<h1>ALV SHOP</h1>
+<h2>Connexion administrateur</h2>
+<input id="password" type="password" placeholder="Mot de passe">
+<button onclick="login()">Se connecter</button>
+<p id="error" class="small"></p>
+</section>
 
-<div class="card">
-<div class="stats">TOTAL DES RECETTES ENREGISTRÉES</div>
-<div class="total" id="total">0 FCFA</div>
-<div class="stats" id="count">0 transaction</div>
-</div>
+<main id="dashboard" class="hidden">
+<h1>ALV SHOP</h1>
+<p class="small">Tableau de bord administrateur</p>
 
 <div class="card">
 <h2>Nouvelle vente</h2>
-
-<label>Nom du client</label>
 <input id="client" placeholder="Nom du client">
+<input id="phone" placeholder="Téléphone du client">
 
-<label>Téléphone du client</label>
-<input id="phone" type="tel" placeholder="Numéro WhatsApp">
-
-<label>Abonnement</label>
-<select id="offer">
-<optgroup label="NETFLIX">
-<option value="2600">Netflix - 1 mois - 2 600 FCFA</option>
-<option value="4500">Netflix - 2 mois - 4 500 FCFA</option>
-<option value="6500">Netflix - 3 mois - 6 500 FCFA</option>
-<option value="12000">Netflix - 6 mois - 12 000 FCFA</option>
-<option value="25000">Netflix - 1 an - 25 000 FCFA</option>
-</optgroup>
-<optgroup label="PRIME">
-<option value="2000">Prime - 1 mois - 2 000 FCFA</option>
-<option value="3500">Prime - 2 mois - 3 500 FCFA</option>
-<option value="5000">Prime - 3 mois - 5 000 FCFA</option>
-<option value="9000">Prime - 6 mois - 9 000 FCFA</option>
-<option value="20000">Prime - 1 an - 20 000 FCFA</option>
-</optgroup>
+<select id="product" onchange="updatePrice()">
+<option value="">Choisir un abonnement</option>
+<option value="Netflix|1 mois|2600">Netflix – 1 mois : 2 600 F</option>
+<option value="Netflix|2 mois|4500">Netflix – 2 mois : 4 500 F</option>
+<option value="Netflix|3 mois|6500">Netflix – 3 mois : 6 500 F</option>
+<option value="Netflix|6 mois|12000">Netflix – 6 mois : 12 000 F</option>
+<option value="Netflix|1 an|25000">Netflix – 1 an : 25 000 F</option>
+<option value="Prime|1 mois|2000">Prime – 1 mois : 2 000 F</option>
+<option value="Prime|2 mois|3500">Prime – 2 mois : 3 500 F</option>
+<option value="Prime|3 mois|5000">Prime – 3 mois : 5 000 F</option>
+<option value="Prime|6 mois|9000">Prime – 6 mois : 9 000 F</option>
+<option value="Prime|1 an|20000">Prime – 1 an : 20 000 F</option>
 </select>
 
-<label>Mode de paiement</label>
+<p id="price" class="small">Montant : —</p>
+
 <select id="payment">
 <option>Airtel Money</option>
 <option>Moov Money</option>
+<option>Recharge</option>
 <option>PayPal</option>
-<option>Recharge / autre</option>
 </select>
 
-<label>Statut du paiement</label>
 <select id="status">
-<option value="confirmé">Paiement confirmé</option>
-<option value="attente">En attente</option>
+<option value="Confirmé">Confirmé</option>
+<option value="En attente">En attente</option>
 </select>
 
-<button class="primary" onclick="addSale()">ENREGISTRER LA VENTE</button>
-<p class="note">Enregistre uniquement les paiements réellement reçus et vérifiés.</p>
+<button onclick="addSale()">Enregistrer la vente</button>
+</div>
+
+<div class="card">
+<h2>Total des recettes confirmées</h2>
+<div id="total" class="total">0 FCFA</div>
 </div>
 
 <div class="card">
 <h2>Historique des ventes</h2>
-<div class="scroll">
-<table>
-<thead>
-<tr>
-<th>Client</th>
-<th>Offre</th>
-<th>Montant</th>
-<th>Statut</th>
-<th></th>
-</tr>
-</thead>
-<tbody id="history"></tbody>
-</table>
-</div>
-<p class="note" id="empty">Aucune vente enregistrée pour le moment.</p>
+<div id="history">Aucune vente enregistrée.</div>
 </div>
 
-<footer>ALV SHOP © 2026 · Administration</footer>
+<button onclick="logout()">Se déconnecter</button>
+</main>
+</div>
 
 <script>
-let sales=[];
-try{
-sales=JSON.parse(localStorage.getItem("alv_sales")||"[]");
-if(!Array.isArray(sales)) sales=[];
-}catch(e){sales=[];}
+const ADMIN_PASSWORD = "ADENA12";
+const STORAGE_KEY = "alvshop_sales_demo";
+let sales = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 
-function save(){
-localStorage.setItem("alv_sales",JSON.stringify(sales));
-render();
+function login(){
+  if(document.getElementById("password").value === ADMIN_PASSWORD){
+    document.getElementById("login").classList.add("hidden");
+    document.getElementById("dashboard").classList.remove("hidden");
+    document.getElementById("error").textContent="";
+    render();
+  }else{
+    document.getElementById("error").textContent="Mot de passe incorrect.";
+  }
+}
+
+function logout(){
+  document.getElementById("dashboard").classList.add("hidden");
+  document.getElementById("login").classList.remove("hidden");
+  document.getElementById("password").value="";
+}
+
+function updatePrice(){
+  const value=document.getElementById("product").value;
+  document.getElementById("price").textContent =
+    value ? "Montant : "+Number(value.split("|")[2]).toLocaleString("fr-FR")+" FCFA" : "Montant : —";
 }
 
 function addSale(){
-const client=document.getElementById("client").value.trim();
-const phone=document.getElementById("phone").value.trim();
-const offer=document.getElementById("offer");
-const amount=Number(offer.value);
-const payment=document.getElementById("payment").value;
-const status=document.getElementById("status").value;
-
-if(!client||!phone){
-alert("Veuillez remplir le nom et le téléphone.");
-return;
+  const client=document.getElementById("client").value.trim();
+  const phone=document.getElementById("phone").value.trim();
+  const product=document.getElementById("product").value;
+  if(!client || !product){
+    alert("Entre le nom du client et choisis un abonnement.");
+    return;
+  }
+  const parts=product.split("|");
+  sales.unshift({
+    client,phone,
+    service:parts[0],
+    duration:parts[1],
+    amount:Number(parts[2]),
+    payment:document.getElementById("payment").value,
+    status:document.getElementById("status").value,
+    date:new Date().toLocaleString("fr-FR")
+  });
+  save();
+  document.getElementById("client").value="";
+  document.getElementById("phone").value="";
+  document.getElementById("product").value="";
+  updatePrice();
+  render();
+  alert("Vente enregistrée !");
 }
 
-sales.unshift({
-id:Date.now(),
-client:client,
-phone:phone,
-offer:offer.options[offer.selectedIndex].text,
-amount:amount,
-payment:payment,
-status:status,
-date:new Date().toLocaleString("fr-FR")
-});
-
-save();
-document.getElementById("client").value="";
-document.getElementById("phone").value="";
-alert("Vente enregistrée !");
-}
-
-function removeSale(id){
-if(!confirm("Supprimer cette transaction ?"))return;
-sales=sales.filter(s=>s.id!==id);
-save();
+function save(){
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(sales));
 }
 
 function render(){
-const history=document.getElementById("history");
-history.replaceChildren();
+  const total=sales.filter(s=>s.status==="Confirmé")
+    .reduce((sum,s)=>sum+s.amount,0);
+  document.getElementById("total").textContent=total.toLocaleString("fr-FR")+" FCFA";
 
-sales.forEach(s=>{
-const tr=document.createElement("tr");
-[s.client,s.offer,s.amount.toLocaleString("fr-FR")+" F",s.status].forEach(value=>{
-const td=document.createElement("td");
-td.textContent=value;
-tr.appendChild(td);
-});
-const td=document.createElement("td");
-const btn=document.createElement("button");
-btn.className="delete";
-btn.textContent="Supprimer";
-btn.onclick=()=>removeSale(s.id);
-td.appendChild(btn);
-tr.appendChild(td);
-history.appendChild(tr);
-});
-
-const confirmed=sales.filter(s=>s.status==="confirmé");
-const total=confirmed.reduce((sum,s)=>sum+s.amount,0);
-document.getElementById("total").textContent=total.toLocaleString("fr-FR")+" FCFA";
-document.getElementById("count").textContent=sales.length+" transaction(s) enregistrée(s)";
-document.getElementById("empty").style.display=sales.length?"none":"block";
+  const history=document.getElementById("history");
+  if(!sales.length){
+    history.textContent="Aucune vente enregistrée.";
+    return;
+  }
+  history.innerHTML="";
+  sales.forEach((s,i)=>{
+    const div=document.createElement("div");
+    div.className="sale";
+    const details=document.createElement("div");
+    details.textContent=s.client+" — "+s.service+" ("+s.duration+")";
+    const amount=document.createElement("strong");
+    amount.textContent=s.amount.toLocaleString("fr-FR")+" FCFA";
+    const info=document.createElement("p");
+    info.className="small";
+    info.textContent=s.date+" | "+s.payment+" | "+s.status;
+    const del=document.createElement("button");
+    del.textContent="Supprimer";
+    del.onclick=()=>{
+      if(confirm("Supprimer cette vente ?")){
+        sales.splice(i,1);
+        save();
+        render();
+      }
+    };
+    div.append(details,amount,info,del);
+    history.appendChild(div);
+  });
 }
-
-render();
 </script>
 </body>
 </html>
